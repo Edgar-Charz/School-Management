@@ -1,0 +1,171 @@
+body {
+    margin: 0;
+    display: flex;
+    height: 100vh;
+    font-family: Arial, sans-serif;
+}
+
+/* Sidebar */
+.sidebar {
+    background-color: #2c3e50;
+    color: white;
+    width: 200px;
+    min-width: 200px;
+    transition: width 0.3s;
+    overflow: hidden;
+    position: relative;
+}
+
+.sidebar.collapsed {
+    width: 60px;
+    min-width: 60px;
+}
+
+/* Toggle button */
+.toggle-btn {
+    cursor: pointer;
+    outline: none;
+    position: absolute;
+    top: 10px;
+    right: 5px;
+    z-index: 1000;
+    font-size: 20px;
+}
+
+/* Sidebar contents */
+.sidebar-content {
+    margin-top: 10px;
+    padding: 10px;
+    display: block;
+    transition: opacity 0.3s;
+}
+
+.sidebar.collapsed .sidebar-content {
+    display: none;
+}
+
+/* Main content */
+.main-content {
+    flex-grow: 1;
+    padding: 20px;
+    /* background: linear-gradient(135deg, #74ebd5, #ACB6E5); */
+}
+
+.menu-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.menu-list li {
+    margin-bottom: 10px;
+}
+
+.menu-list li a {
+    display: block;
+    color: white;
+    text-decoration: none;
+    padding: 10px 15px;
+    left: 0px;
+    border-radius: 5px;
+    transition: background 0.3s, padding-left 0.3s;
+}
+
+.menu-list li a:hover {
+    background-color: #19508a;
+    padding-left: 25px;
+}
+
+/* --------- Responsive Additions --------- */
+@media (max-width: 768px) {
+    body {
+        flex-direction: column;
+        height: auto;
+    }
+
+    .sidebar {
+        width: 100%;
+        min-width: 100%;
+        height: auto;
+    }
+
+    .sidebar.collapsed {
+        width: 100%;
+        min-width: 100%;
+    }
+
+    .sidebar-content {
+        text-align: center;
+    }
+
+    .toggle-btn {
+        position: absolute;
+        right: 10px;
+        top: 10px;
+        font-size: 22px;
+    }
+
+    .main-content {
+        padding: 15px;
+    }
+}
+
+@media (max-width: 480px) {
+    .menu-list li a {
+        padding: 8px 10px;
+        font-size: 16px;
+    }
+
+    .toggle-btn {
+        font-size: 20px;
+    }
+}
+
+
+/* .card {
+    border: 1px solid #ddd;
+    padding: 20px;
+    margin: 15px 0;
+    border-radius: 5px;
+} */
+
+/* Card container */
+.card-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;    /* Space between cards */
+}
+
+/* Card styling */
+.card {
+    flex: 1 1 calc(20% - 20px);    /* 4 cards in a row */
+    border: 1px solid #ddd;
+    padding: 10px;
+    border-radius: 5px;
+    background-color: #fff;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    min-width: 200px;    /* Ensure they don't get too small on tiny screens */
+    transition: transform 0.3s ease, box-shadow 0.3s ease; /* Add smooth transition */
+}
+
+/* Hover lift effect */
+.card:hover {
+    transform: translateY(-8px); /* Lift the card up slightly */
+    box-shadow: 0 8px 15px rgba(0, 0, 0, 0.2); /* Stronger shadow on hover */
+}
+
+/* Responsive (for smaller screens) */
+@media (max-width: 800px) {
+    .card {
+        flex: 1 1 calc(40% - 20px);        /* 2 cards in a row */
+    }
+}
+
+@media (max-width: 500px) {
+    .card {
+        flex: 1 1 100%;
+        /* 1 card per row */
+    }
+}
+
+
