@@ -12,7 +12,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $hashed_password = password_hash(trim($_POST['password']), PASSWORD_DEFAULT);
     $role     = $_POST['role'];
     $class = $_POST['class'];
-
+    
     // Check if email already exists
     $check = $conn->prepare("SELECT * FROM users WHERE user_email = ?");
     $check->bind_param("s", $email);
