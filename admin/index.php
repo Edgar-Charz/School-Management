@@ -1,10 +1,29 @@
 <?php
 session_start();
+include_once '../includes/session_check.php';
 include '../includes/db_connection.php';
 
 if (!isset($_SESSION['role']) || $_SESSION['role'] != 'Admin') {
     header("Location: ../php/login.php");
     exit();
+}
+
+// Check if login was successful
+if (isset($_SESSION['login_success']) && $_SESSION['login_success']) {
+    unset($_SESSION['login_success']);
+
+    echo "<script>
+          document.addEventListener('DOMContentLoaded', function() {
+              Swal.fire({
+                //   title: 'Hi !,  " . ucwords(strtolower($_SESSION['name'])) . "',
+                  text: 'Welcome back !, " . ucwords(strtolower($_SESSION['name'])) . "',
+                  icon: 'success',
+                  confirmButtonText: 'OK',
+                  timer: 15000, 
+                  timerProgressBar: true 
+              });
+          });
+      </script>";
 }
 
 // Count total teachers
@@ -39,7 +58,16 @@ $total_subjects = $subjects_count_query->fetch_assoc()["total_subjects"];
         <title>Dream School | Dashboard</title>
         <!-- Bootstrap Icons CDN -->
         <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
+        <!-- SweetAlert2 CDN -->
+        <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
         <link rel="stylesheet" href="../assets/css/styles.css">
+        <style>
+            .swal2-popup {
+                font-size: 13px !important;
+                width: 300px !important;
+                background-color: rgba(255, 255, 255, 0.9) !important;
+            }
+        </style>
     </head>
 
 <body>

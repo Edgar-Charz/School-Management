@@ -1,5 +1,6 @@
 <?php
 session_start();
+include_once '../includes/session_check.php';
 include '../includes/db_connection.php';
 
 if (!isset($_SESSION['role']) || $_SESSION['role'] != 'Admin') {
@@ -20,13 +21,21 @@ $total_admins = $admins_count_query_result->fetch_assoc()['total_admins'];
 <!DOCTYPE html>
 <html>
 
-<head><meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1">
-        <title>Dream School | Dashboard</title>
-        <!-- Bootstrap Icons CDN -->
-        <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
-        <link rel="stylesheet" href="../assets/css/styles.css">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Dream School | Dashboard</title>
+    <!-- Bootstrap Icons CDN -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
+    <!-- SweetAlert2 CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <link rel="stylesheet" href="../assets/css/styles.css">
     <style>
+        .swal2-popup {
+            font-size: 13px !important;
+            width: 300px !important;
+            background-color: rgba(255, 255, 255, 0.9) !important;
+        }
         h3 {
             text-align: center;
         }
@@ -81,8 +90,9 @@ $total_admins = $admins_count_query_result->fetch_assoc()['total_admins'];
             color: #333;
         }
 
-        input[type="text"] {
-            width: 50%;
+        input[type="text"],
+        [type="email"] {
+            width: auto;
             padding: 8px;
             margin-top: 10px;
             border: 1px solid #ccc;
@@ -120,6 +130,24 @@ $total_admins = $admins_count_query_result->fetch_assoc()['total_admins'];
             text-decoration: none;
             transition: background 0.3s, padding-left 0.3s;
         }
+        .buttons {
+            margin-top: 20px;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .buttons button {
+            width: 48%;
+            /* Adjust width to fit within the container with spacing */
+            padding: 10px 20px;
+            background-color: #3498db;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            text-align: center;
+        }
+
     </style>
 </head>
 
@@ -186,19 +214,78 @@ $total_admins = $admins_count_query_result->fetch_assoc()['total_admins'];
                         <td><?= $admin['created_at']; ?></td>
                         <td>
                             <button style="background-color: red;" class="button"><a href="demote_admin.php?id=<?= $admin['user_id']; ?>" onclick="return confirm('Demote this admin?')">Demote</a></button> |
+                            <button style="background-color: blue;" class="button edit-btn" data-id="<?= $admin['user_id']; ?>" data-name="<?= $admin['username']; ?>" data-email="<?= $admin['user_email']; ?>">Edit</button> |
                             <button style="background-color: green;" class="button"><a href="delete_admin.php?id=<?= $admin['user_id']; ?>" onclick="return confirm('Delete this admin?')">Delete</a></button>
                         </td>
                     </tr>
                 <?php } ?>
             </table>
-            <!-- <p><a href="index.php">Back to Dashboard</a></p> -->
+
+            <!-- Edit Admin Modal -->
+            <div id="editAdminModal" class="modal">
+                <div class="modal-content">
+                    <span id="closeEditModalBtn" class="close">&times;</span>
+                    <h4>Edit Admin</h4>
+                    <form id="editAdminForm" method="POST" action="edit_admin.php">
+                        <input type="hidden" id="edit_admin_id" name="admin_id">
+                        <label>Name: </label>
+                        <input type="text" id="edit_admin_name" name="admin_name" placeholder="Name" required><br>
+                        <label>Email: </label>
+                        <input type="email" id="edit_admin_email" name="admin_email" placeholder="Email" required>
+                        <div class="buttons">
+                            <button type="submit" style="margin-top: 10px;" class="">Save Changes</button>
+                            <button type="button" id="cancelEditBtn" style="margin-top: 10px; background-color: #ccc;" class="btn">Cancel</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
         </div>
         <script>
             function toggleSidebar() {
                 document.getElementById('sidebar').classList.toggle('collapsed');
             }
         </script>
+        <script>
+            // Get modal elements
+            const editModal = document.getElementById("editAdminModal");
+            const closeEditModalBtn = document.getElementById("closeEditModalBtn");
+            const cancelEditBtn = document.getElementById("cancelEditBtn");
+            const editAdminForm = document.getElementById("editAdminForm");
 
+            // Open modal when "Edit" button is clicked
+            document.querySelectorAll(".edit-btn").forEach(button => {
+                button.addEventListener("click", function() {
+                    const adminId = this.getAttribute("data-id");
+                    const adminName = this.getAttribute("data-name");
+                    const adminEmail = this.getAttribute("data-email");
+
+                    // Populate the form with admin data
+                    document.getElementById("edit_admin_id").value = adminId;
+                    document.getElementById("edit_admin_name").value = adminName;
+                    document.getElementById("edit_admin_email").value = adminEmail;
+
+                    // Show the modal
+                    editModal.style.display = "block";
+                });
+            });
+
+            // Close modal when "X" button is clicked
+            closeEditModalBtn.onclick = function() {
+                editModal.style.display = "none";
+            };
+
+            // Close modal when "Cancel" button is clicked
+            cancelEditBtn.onclick = function() {
+                editModal.style.display = "none";
+            };
+
+            // Close modal when clicking outside the modal
+            window.onclick = function(event) {
+                if (event.target == editModal) {
+                    editModal.style.display = "none";
+                }
+            };
+        </script>
 </body>
 
 </html>

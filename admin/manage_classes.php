@@ -1,5 +1,6 @@
 <?php
 session_start();
+include_once '../includes/session_check.php';
 include '../includes/db_connection.php';
 
 if (!isset($_SESSION['role']) || $_SESSION['role'] != 'Admin') {
@@ -9,6 +10,7 @@ if (!isset($_SESSION['role']) || $_SESSION['role'] != 'Admin') {
 
 // Handle add class
 $msg = "";
+
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $class_name = trim($_POST['class_name']);
 
@@ -19,14 +21,38 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $result = $check->get_result();
 
     if ($result->num_rows > 0) {
-        $msg = "Class already exists.";
+        echo "<script>
+            document.addEventListener('DOMContentLoaded', function () {
+            Swal.fire({
+                icon: 'warning',
+                // title: 'Oops...',
+                text: 'Class already exists.'
+            });
+    });
+          </script>";
     } else {
         $insert = $conn->prepare("INSERT INTO classes (class_name) VALUES (?)");
         $insert->bind_param("s", $class_name);
         if ($insert->execute()) {
-            $msg = "Class added successfully.";
+            echo "<script>
+                document.addEventListener('DOMContentLoaded', function () {
+                Swal.fire({
+                    icon: 'success',
+                    // title: 'Oops...',
+                    text: 'Class added successfully.'
+                });
+        });
+              </script>";
         } else {
-            $msg = "Failed to add class.";
+            echo "<script>
+                document.addEventListener('DOMContentLoaded', function () {
+                Swal.fire({
+                    icon: 'error',
+                    // title: 'Oops...',
+                    text: 'Failed to add class.'
+                });
+        });
+              </script>";
         }
     }
 }
@@ -51,8 +77,15 @@ $total_classes = $classes_count_query_result->fetch_assoc()['total_classes'];
     <title>Dream School | Dashboard</title>
     <!-- Bootstrap Icons CDN -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
+    <!-- SweetAlert2 CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <link rel="stylesheet" href="../assets/css/styles.css">
     <style>
+        .swal2-popup {
+            font-size: 13px !important;
+            width: 300px !important;
+            background-color: rgba(255, 255, 255, 0.9) !important;
+        }
         h3 {
             text-align: center;
         }
@@ -183,12 +216,14 @@ $total_classes = $classes_count_query_result->fetch_assoc()['total_classes'];
                     <th>ID</th>
                     <th>Class Name</th>
                     <th>Created</th>
+                    <th>Action</th>
                 </tr>
                 <?php while ($class = $classes_stmt_result->fetch_assoc()) { ?>
                     <tr>
                         <td><?= $class['class_id']; ?></td>
                         <td><?= $class['class_name']; ?></td>
                         <td><?= $class['created_at']; ?></td>
+                        <td></td>
                     </tr>
                 <?php } ?>
             </table>
@@ -199,8 +234,8 @@ $total_classes = $classes_count_query_result->fetch_assoc()['total_classes'];
                     <span id="closeModalBtn" class="close">&times;</span>
                     <h4>Add New Class</h4>
                     <form action="" method="POST">
-                        <label for="class_name">Class Name:</label>
-                        <input type="text" id="class_name" name="class_name" required>
+                        <!-- <label for="class_name">Class Name:</label> -->
+                        <input type="text" id="class_name" name="class_name" placeholder="Class Name" required>
 
                         <button type="submit" style="margin-top: 10px;" class="btn">Add Class</button>
                     </form>

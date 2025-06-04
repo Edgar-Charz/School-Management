@@ -1,5 +1,6 @@
 <?php
 session_start();
+include_once '../includes/session_check.php';
 include '../includes/db_connection.php';
 
 if (!isset($_SESSION['role']) || $_SESSION['role'] != 'Admin') {
@@ -30,8 +31,15 @@ $total_students = $student_count_query_result->fetch_assoc()['total_students'];
     <title>Dream School | Dashboard</title>
     <!-- Bootstrap Icons CDN -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
+    <!-- SweetAlert2 CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <link rel="stylesheet" href="../assets/css/styles.css">
     <style>
+        .swal2-popup {
+            font-size: 13px !important;
+            width: 300px !important;
+            background-color: rgba(255, 255, 255, 0.9) !important;
+        }
         h3 {
             text-align: center;
         }

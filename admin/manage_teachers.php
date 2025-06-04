@@ -1,5 +1,6 @@
 <?php
 session_start();
+include_once '../includes/session_check.php';
 include '../includes/db_connection.php';
 
 if (!isset($_SESSION['role']) || $_SESSION['role'] != 'Admin') {
@@ -9,6 +10,7 @@ if (!isset($_SESSION['role']) || $_SESSION['role'] != 'Admin') {
 
 $msg = "";
 
+// Fetch data for teachers
 $teacher_stmt = $conn->prepare("
                 SELECT teachers.teacher_id, users.user_id, users.username, users.user_email, users.created_at 
                 FROM teachers, users
@@ -16,10 +18,94 @@ $teacher_stmt = $conn->prepare("
 $teacher_stmt->execute();
 $teacher_result = $teacher_stmt->get_result();
 
-$teacher_count_query = "SELECT COUNT(*)  AS total_teachers FROM teachers";
+// Coount total teachers
+$teacher_count_query = "SELECT COUNT(*) AS total_teachers FROM teachers";
 $teacher_count_query_result = $conn->query($teacher_count_query);
 $total_teachers = $teacher_count_query_result->fetch_assoc()['total_teachers'];
 
+// Fetch data for class subjects teacher
+$student_stmt = $conn->prepare("
+                SELECT teachers.teacher_id, users.*, classes.*, subjects.* 
+                FROM class_subject_teachers, classes, subjects, teachers, users
+                WHERE class_subject_teachers.class_id = classes.class_id 
+                  AND class_subject_teachers.subject_id = subjects.subject_id 
+                  AND class_subject_teachers.teacher_id = teachers.teacher_id 
+                  AND users.user_id = teachers.user_id");
+$student_stmt->execute();
+$student_result = $student_stmt->get_result();
+
+// Count total students
+$student_count_query = "SELECT COUNT(*) AS total_students FROM students";
+$student_count_query_result = $conn->query($student_count_query);
+$total_students = $student_count_query_result->fetch_assoc()['total_students'];
+
+// Fetch classes
+$classes = mysqli_query($conn, "SELECT * FROM classes");
+// Fetch subjects
+$subjects = mysqli_query($conn, "SELECT * FROM subjects");
+// Fetch teachers
+$teachers = mysqli_query($conn, "SELECT teachers.*, users.username 
+                                       FROM teachers, users
+                                       WHERE teachers.user_id = users.user_id");
+
+//Assign Teachers to subjects in classes
+if (isset($_POST['assignBTN'])) {
+    $class_id = trim($_POST['class_id']);
+    $subject_id = trim($_POST['subject_id']);
+    $teacher_id = trim($_POST['teacher_id']);
+
+    // Prevent duplicate subject assignment
+    $check_subject = $conn->prepare("SELECT * FROM class_subject_teachers 
+                                              WHERE class_id = ? 
+                                                AND subject_id = ?");
+    $check_subject->bind_param("ii", $class_id, $subject_id);
+    $check_subject->execute();
+    $check_subject_result = $check_subject->get_result();
+
+    if ($check_subject_result->num_rows > 0) {
+        echo "<script>
+            document.addEventListener('DOMContentLoaded', function () {
+            Swal.fire({
+                icon: 'warning',
+                // title: 'Oops...',
+                text: 'This subject is already assigned to this class.'
+            });
+    });
+          </script>";
+
+    } else {
+
+        $insert_subject_teacher = $conn->prepare("INSERT INTO class_subject_teachers (class_id, subject_id, teacher_id) 
+                                                        VALUES (?, ?, ?)");
+        $insert_subject_teacher->bind_param("iii", $class_id, $subject_id, $teacher_id);
+
+        if ($insert_subject_teacher->execute()) {
+            echo "<script>
+                document.addEventListener('DOMContentLoaded', function () {
+                Swal.fire({
+                    icon: 'success',
+                    // title: 'Oops...',
+                    text: 'Assignment successfully!'
+                });
+        });
+              </script>";
+        } else {
+            echo "<script>
+                document.addEventListener('DOMContentLoaded', function () {
+                Swal.fire({
+                    icon: 'error',
+                    // title: 'Oops...',
+                    text: 'Error occured'
+                }).then(() => {
+                    // Redirect after SweetAlert is closed
+                    window.location.href = 'manage_teachers.php';
+                });
+            });
+              </script>";
+        }
+        // header("Location: manage_teachers.php");
+    }
+}
 ?>
 
 <!DOCTYPE html>
@@ -28,11 +114,18 @@ $total_teachers = $teacher_count_query_result->fetch_assoc()['total_teachers'];
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Dream School | Dashboard</title>
-    <!-- Bootstrap Icons CDN -->
+    <title>Dream School | Manage Data</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
+    <!-- SweetAlert2 CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <link rel="stylesheet" href="../assets/css/styles.css">
     <style>
+        .swal2-popup {
+            font-size: 13px !important;
+            width: 300px !important;
+            background-color: rgba(255, 255, 255, 0.9) !important;
+        }
+
         h3 {
             text-align: center;
         }
@@ -87,8 +180,9 @@ $total_teachers = $teacher_count_query_result->fetch_assoc()['total_teachers'];
             color: #333;
         }
 
-        input[type="text"] {
-            width: 50%;
+        input[type="text"],
+        select {
+            width: 90%;
             padding: 8px;
             margin-top: 10px;
             border: 1px solid #ccc;
@@ -126,11 +220,55 @@ $total_teachers = $teacher_count_query_result->fetch_assoc()['total_teachers'];
             text-decoration: none;
             transition: background 0.3s, padding-left 0.3s;
         }
+
+        h3 {
+            text-align: center;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        th,
+        td {
+            padding: 10px;
+            border: 1px solid #ccc;
+            text-align: left;
+        }
+
+        .nav-bar {
+            display: flex;
+            justify-content: center;
+            margin: 20px 0;
+        }
+
+        .nav-bar button {
+            margin: 0 10px;
+            padding: 10px 20px;
+            background-color: #3498db;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        .nav-bar button.active {
+            background-color: #2c3e50;
+        }
+
+        .table-container {
+            display: none;
+        }
+
+        .table-container.active {
+            display: block;
+        }
     </style>
 </head>
 
 <body>
-
     <!-- Sidebar -->
     <div class="sidebar" id="sidebar">
         <button class="toggle-btn" onclick="toggleSidebar()">☰</button>
@@ -153,7 +291,6 @@ $total_teachers = $teacher_count_query_result->fetch_assoc()['total_teachers'];
         <!-- Top Navbar -->
         <div class="navbar">
             <div class="navbar-left">
-                <!-- <button class="toggle-btn" onclick="toggleSidebar()">☰</button> -->
                 <h2>Dream School</h2>
             </div>
             <div class="nav-links">
@@ -175,53 +312,130 @@ $total_teachers = $teacher_count_query_result->fetch_assoc()['total_teachers'];
             <?php if ($msg != "") echo "<p style='color:green;'>$msg</p>"; ?>
             <br>
 
-            <h3>All Registered Teachers</h3>
-            <button id="openModalBtn" style="margin-left: 5px; padding: 8px 5px; background-color: #3498db; color: white; border: none; border-radius: 5px; cursor: pointer;">Add Teacher</button>
+            <!-- Navigation Bar -->
+            <div class="nav-bar">
+                <button class="nav-link active" data-target="teachers-table">Teachers</button>
+                <button class="nav-link" data-target="students-table">Class Subject Teachers</button>
+            </div>
 
-            <table>
-                <tr>
-                    <th>User ID</th>
-                    <th>Teacher ID</th>
-                    <th>Name</th>
-                    <th>Email</th>
-                    <!-- <th>Phone</th> -->
-                    <th>Date</th>
-                    <th>Action</th>
-                </tr>
-                <?php while ($row = $teacher_result->fetch_assoc()) { ?>
-                    <tr>
-                        <td><?= $row['user_id'] ?></td>
-                        <td><?= $row['teacher_id']; ?></td>
-                        <td><?= $row['username']; ?></td>
-                        <td><?= $row['user_email']; ?></td>
-                        <td><?= $row['created_at']; ?></td>
-                        <td>
-                            <button style="background-color: green;" class="button"><a href="edit_teacher.php?id=<?= $row['teacher_id']; ?>">Edit</a></button> |
-                            <button style="background-color: red;" class="button"><a href="delete_teacher.php?id=<?= $row['teacher_id']; ?>" onclick="return confirm('Delete this teacher?')">Delete</a></button> |
-                            <button style="background-color: blue;" class="button"><a href="promote_teacher.php?id=<?= $row['teacher_id']; ?>">Promote</a></button>
-                        </td>
-                    </tr>
-                <?php } ?>
-            </table>
-            <!-- Modal -->
-            <div id="myModal" class="modal">
-                <div class="modal-content">
-                    <span id="closeModalBtn" class="close">&times;</span>
-                    <h4>Add New Teacher</h4>
-                    <form action="" method="POST">
-                        <label for="class_name">FirstName:</label>
-                        <input type="text" id="class_name" name="class_name" required>
-                        <label for="class_name">LastName:</label>
-                        <input type="text" id="class_name" name="class_name" required>
-                        <label for="class_name">Class Name:</label>
-                        <input type="text" id="class_name" name="class_name" required>
+            <!-- Teachers Table -->
+            <div id="teachers-table" class="table-container active">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                    <!-- Add Teacher Button -->
+                    <button id="openTeacherModalBtn" style="padding: 8px 5px; background-color: #3498db; color: white; border: none; border-radius: 5px; cursor: pointer;">Add Teacher</button>
 
-                        <button type="submit" style="margin-top: 10px;" class="btn">Add Teacher</button>
-                    </form>
+                    <!-- Search Bar -->
+                    <input type="text" id="searchBar" placeholder="Search Teachers..." style="padding: 8px; width: 300px; border: 1px solid #ccc; border-radius: 5px;">
                 </div>
+
+                <table>
+                    <tr>
+                        <th>User ID</th>
+                        <th>Teacher ID</th>
+                        <th>Name</th>
+                        <th>Email</th>
+                        <th>Date</th>
+                        <th>Action</th>
+                    </tr>
+                    <?php while ($row = $teacher_result->fetch_assoc()) { ?>
+                        <tr class="teacher-row">
+                            <td><?= $row['user_id'] ?></td>
+                            <td><?= $row['teacher_id']; ?></td>
+                            <td><?= $row['username']; ?></td>
+                            <td><?= $row['user_email']; ?></td>
+                            <td><?= $row['created_at']; ?></td>
+                            <td>
+                                <button style="background-color: green;" class="button"><a href="edit_teacher.php?id=<?= $row['teacher_id']; ?>">Edit</a></button> |
+                                <button style="background-color: red;" class="button"><a href="delete_teacher.php?id=<?= $row['teacher_id']; ?>" onclick="return confirm('Delete this teacher?')">Delete</a></button> |
+                                <button style="background-color: blue;" class="button"><a href="promote_teacher.php?id=<?= $row['teacher_id']; ?>">Promote</a></button>
+                            </td>
+                        </tr>
+                    <?php } ?>
+                </table>
+
+                <!--Teacher's Modal -->
+                <div id="teacherModal" class="modal">
+                    <div class="modal-content">
+                        <span id="closeTeacherModalBtn" class="close">&times;</span>
+                        <h4>Add New Teacher</h4>
+                        <form action="" method="POST">
+                            <input type="text" id="first_name" name="first_name" placeholder="First Name" required>
+                            <input type="text" id="last_name" name="last_name" placeholder="Last Name" required>
+                            <input type="text" id="class_name" name="class_name" placeholder="Class Name" required>
+                            <button type="submit" style="margin-top: 10px;" class="btn">Add Teacher</button>
+                        </form>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- Students Table -->
+            <div id="students-table" class="table-container">
+                <button id="openStudentModalBtn" style="margin-left: 5px; padding: 8px 5px; background-color: #3498db; color: white; border: none; border-radius: 5px; cursor: pointer;">Assign</button>
+
+                <table>
+                    <tr>
+                        <th>User ID</th>
+                        <th>Teacher ID</th>
+                        <th>Name</th>
+                        <th>Email</th>
+                        <th>Class</th>
+                        <th>Subject</th>
+                        <th>Date</th>
+                        <th>Action</th>
+                    </tr>
+                    <?php while ($row = $student_result->fetch_assoc()) { ?>
+                        <tr>
+                            <td><?= $row['user_id'] ?></td>
+                            <td><?= $row['teacher_id']; ?></td>
+                            <td><?= $row['username']; ?></td>
+                            <td><?= $row['user_email']; ?></td>
+                            <td><?= $row['class_name']; ?></td>
+                            <td><?= $row['subject_name']; ?></td>
+                            <td><?= $row['created_at']; ?></td>
+                            <td>
+                                <button style="background-color: green;" class="button"><a href="edit_student.php?id=<?= $row['teacher_id']; ?>">Edit</a></button> |
+                                <button style="background-color: red;" class="button"><a href="delete_student.php?id=<?= $row['teacher_id']; ?>" onclick="return confirm('Delete this student?')">Delete</a></button>
+                            </td>
+                        </tr>
+                    <?php } ?>
+                </table>
+
+                <!-- Student's Modal -->
+                <div id="studentModal" class="modal">
+                    <div class="modal-content">
+                        <span id="closeStudentModalBtn" class="close">&times;</span>
+                        <h4>Add New Student</h4>
+                        <form action="" method="POST">
+                            <select name="class_id" required>
+                                <option value="">--Select Class--</option>
+                                <?php while ($row = mysqli_fetch_assoc($classes)) { ?>
+                                    <option value="<?= $row['class_id'] ?>"><?= $row['class_name'] ?></option>
+                                <?php } ?>
+                            </select>
+                            <select name="subject_id" id="subjectDropdown" required>
+                                <option value="">--Select Subject--</option>
+                                <?php while ($row = mysqli_fetch_assoc($subjects)) { ?>
+                                    <option value="<?= $row['subject_id'] ?>"><?= $row['subject_name'] ?></option>
+                                <?php } ?>
+                            </select>
+                            <!-- <select name="teacher_id" required>
+                                <option value="">--Select Teacher--</option>
+                                <?php while ($row = mysqli_fetch_assoc($teachers)) { ?>
+                                    <option value="<?= $row['teacher_id'] ?>"><?= $row['username'] ?></option>
+                                <?php } ?>
+                            </select> -->
+                            <select name="teacher_id" id="teacherDropdown" required>
+                                <option value="">--Select Teacher--</option>
+                                <!-- Teachers will be dynamically populated here -->
+                            </select>
+                            <button type="submit" style="margin-top: 10px;" class="btn" name="assignBTN">Assign</button>
+                        </form>
+                    </div>
+                </div>
+
             </div>
         </div>
-        <!-- <p><a href="index.php">Back to Dashboard</a></p> -->
 
     </div>
 
@@ -232,9 +446,9 @@ $total_teachers = $teacher_count_query_result->fetch_assoc()['total_teachers'];
     </script>
     <script>
         // Get elements
-        var modal = document.getElementById("myModal");
-        var openBtn = document.getElementById("openModalBtn");
-        var closeBtn = document.getElementById("closeModalBtn");
+        var modal = document.getElementById("teacherModal");
+        var openBtn = document.getElementById("openTeacherModalBtn");
+        var closeBtn = document.getElementById("closeTeacherModalBtn");
 
         // Open modal
         openBtn.onclick = function() {
@@ -253,7 +467,95 @@ $total_teachers = $teacher_count_query_result->fetch_assoc()['total_teachers'];
             }
         }
     </script>
+    <script>
+        // Get elements for the student modal
+        var studentModal = document.getElementById("studentModal");
+        var openStudentBtn = document.getElementById("openStudentModalBtn");
+        var closeStudentBtn = document.getElementById("closeStudentModalBtn");
 
+        // Open student modal
+        openStudentBtn.onclick = function() {
+            studentModal.style.display = "block";
+        }
+
+        // Close student modal
+        closeStudentBtn.onclick = function() {
+            studentModal.style.display = "none";
+        }
+
+        // Close student modal if user clicks outside the modal
+        window.onclick = function(event) {
+            if (event.target == studentModal) {
+                studentModal.style.display = "none";
+            }
+        }
+    </script>
+    <script>
+        // Handle navigation bar clicks
+        const navLinks = document.querySelectorAll('.nav-link');
+        const tableContainers = document.querySelectorAll('.table-container');
+
+        navLinks.forEach(link => {
+            link.addEventListener('click', () => {
+                // Remove active class from all links and tables
+                navLinks.forEach(link => link.classList.remove('active'));
+                tableContainers.forEach(table => table.classList.remove('active'));
+
+                // Add active class to the clicked link and corresponding table
+                link.classList.add('active');
+                document.getElementById(link.getAttribute('data-target')).classList.add('active');
+            });
+        });
+    </script>
+    <script>
+        // Search functionality
+        document.getElementById('searchBar').addEventListener('input', function() {
+            const searchValue = this.value.toLowerCase();
+            const rows = document.querySelectorAll('.teacher-row');
+
+            rows.forEach(row => {
+                const name = row.cells[2].textContent.toLowerCase();
+                const email = row.cells[3].textContent.toLowerCase();
+
+                if (name.includes(searchValue) || email.includes(searchValue)) {
+                    row.style.display = '';
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+        });
+    </script>
+    <script>
+    document.getElementById('subjectDropdown').addEventListener('change', function () {
+        const subjectId = this.value;
+        const teacherDropdown = document.getElementById('teacherDropdown');
+
+        // Clear the teacher dropdown
+        teacherDropdown.innerHTML = '<option value="">--Select Teacher--</option>';
+
+        if (subjectId) {
+            // Make an AJAX request to fetch teachers
+            fetch('get_teachers.php', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: `subject_id=${subjectId}`,
+            })
+                .then(response => response.json())
+                .then(data => {
+                    // Populate the teacher dropdown with the fetched data
+                    data.forEach(teacher => {
+                        const option = document.createElement('option');
+                        option.value = teacher.teacher_id;
+                        option.textContent = teacher.username;
+                        teacherDropdown.appendChild(option);
+                    });
+                })
+                .catch(error => console.error('Error fetching teachers:', error));
+        }
+    });
+</script>
 </body>
 
 </html>

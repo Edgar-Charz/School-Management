@@ -1,13 +1,12 @@
 <?php
 session_start();
+include_once '../includes/session_check.php';
 include '../includes/db_connection.php';
 
 if (!isset($_SESSION['role']) || $_SESSION['role'] != 'Admin') {
     header("Location: ../php/login.php");
     exit();
 }
-
-$msg = "";
 
 // Handle subject submission
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
@@ -21,21 +20,45 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $result = $check->get_result();
 
     if ($result->num_rows > 0) {
-        $msg = "Subject already exists.";
+        echo "<script>
+        document.addEventListener('DOMContentLoaded', function () {
+                Swal.fire({
+                    icon: 'warning',
+                    // title: 'Oops...',
+                    text: 'Subject already exists!'
+                });
+        });
+              </script>";
     } else {
         $stmt = $conn->prepare("INSERT INTO subjects (subject_name, description) VALUES (?, ?)");
         $stmt->bind_param("ss", $subject_name, $subject_description);
 
         if ($stmt->execute()) {
-            $msg = "Subject added successfully.";
+            echo "<script>
+            document.addEventListener('DOMContentLoaded', function () {
+                    Swal.fire({
+                        icon: 'success',
+                        // title: 'Success',
+                        text: 'Subject added successfully!'
+                    });
+            });
+                  </script>";
         } else {
-            $msg = "Failed to add subject.";
+            echo "<script>
+            document.addEventListener('DOMContentLoaded', function () {        
+                    Swal.fire({
+                        icon: 'error',
+                        // title: 'Error',
+                        text: 'Failed to add subject!'
+                    });
+            });
+                  </script>";
         }
     }
 }
 
 // Fetch all subjects
-$subjects = $conn->query("SELECT * FROM subjects ORDER BY subject_name ASC");
+$subjects = $conn->query("SELECT * FROM subjects ORDER BY subject_id ASC");
 
 $subjects_count_query = "SELECT COUNT(*) AS total_subjects FROM subjects";
 $subjects_count_query_result = $conn->query("$subjects_count_query");
@@ -49,11 +72,19 @@ $total_subjects = $subjects_count_query_result->fetch_assoc()['total_subjects'];
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Dream School | Dashboard</title>
+    <title>Dream School | Manage Subjects</title>
     <!-- Bootstrap Icons CDN -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
     <link rel="stylesheet" href="../assets/css/styles.css">
+    <!-- SweetAlert2 CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <style>
+        .swal2-popup {
+            font-size: 13px !important;
+            width: 300px !important;
+            background-color: rgba(255, 255, 255, 0.9) !important;
+        }
+
         h3 {
             text-align: center;
         }
@@ -155,14 +186,12 @@ $total_subjects = $subjects_count_query_result->fetch_assoc()['total_subjects'];
         <!-- Top Navbar -->
         <div class="navbar">
             <div class="navbar-left">
-                <!-- <button class="toggle-btn" onclick="toggleSidebar()">☰</button> -->
                 <h2>Dream School</h2>
             </div>
             <div class="nav-links">
                 <a href="logout.php"><i class="bi bi-box-arrow-right"></i></a>
             </div>
         </div>
-
 
         <div class="main-content">
             <br>
@@ -174,7 +203,6 @@ $total_subjects = $subjects_count_query_result->fetch_assoc()['total_subjects'];
                 </div>
             </div>
 
-            <?php if ($msg != "") echo "<p style='color:green;'>$msg</p>"; ?>
             <br>
 
             <button id="openModalBtn" style="margin-left: 5px; padding: 8px 5px; background-color: #3498db; color: white; border: none; border-radius: 5px; cursor: pointer;">Add Subject</button>
@@ -202,16 +230,12 @@ $total_subjects = $subjects_count_query_result->fetch_assoc()['total_subjects'];
                     <span id="closeModalBtn" class="close">&times;</span>
                     <h4>Add New Subject</h4>
                     <form action="" method="POST">
-                        <!-- <label for="subject_name">Subject Name:</label> -->
                         <input type="text" id="subject_name" name="subject_name" placeholder="Subject Name" required>
                         <input type="text" id="description" name="description" placeholder="Subject Description" required>
                         <button type="submit" style="margin-top: 10px;" class="btn">Add Subject</button>
                     </form>
                 </div>
             </div>
-
-            <!-- <p><a href="index.php">Back to Dashboard</a></p> -->
-
         </div>
     </div>
 
@@ -219,8 +243,7 @@ $total_subjects = $subjects_count_query_result->fetch_assoc()['total_subjects'];
         function toggleSidebar() {
             document.getElementById('sidebar').classList.toggle('collapsed');
         }
-    </script>
-    <script>
+
         // Get elements
         var modal = document.getElementById("myModal");
         var openBtn = document.getElementById("openModalBtn");
@@ -243,7 +266,6 @@ $total_subjects = $subjects_count_query_result->fetch_assoc()['total_subjects'];
             }
         }
     </script>
-
 </body>
 
 </html>

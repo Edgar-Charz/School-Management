@@ -4,21 +4,28 @@ include '../includes/db_connection.php';
 
 $msg = "";
 
+if (isset($_GET['timeout']) && $_GET['timeout'] === "true") {
+    echo "<script>
+    alert('You have been logged out due to inactivity!!');
+    </script>";
+}
+
 if (isset($_POST["loginBTN"])) {
     $email = trim($_POST['user_email']);
     $password = trim($_POST['password']);
 
-    $stmt = $conn->prepare("SELECT * FROM users WHERE user_email = ?");
-    $stmt->bind_param("s", $email);
-    $stmt->execute();
-    $res = $stmt->get_result();
+    $login_stmt = $conn->prepare("SELECT * FROM users WHERE user_email = ?");
+    $login_stmt->bind_param("s", $email);
+    $login_stmt->execute();
+    $result = $login_stmt->get_result();
 
-    if ($res->num_rows === 1) {
-        $user = $res->fetch_assoc();
+    if ($result->num_rows === 1) {
+        $user = $result->fetch_assoc();
         if (password_verify($password, $user['hashed_password'])) {
             $_SESSION['id'] = $user['user_id'];
             $_SESSION['name'] = $user['username'];
             $_SESSION['role'] = $user['user_role'];
+            $_SESSION['login_success'] = true;
 
             // Redirect based on role
             if ($user['user_role'] == 'Admin') {
@@ -29,11 +36,28 @@ if (isset($_POST["loginBTN"])) {
                 header("Location: ../student/index.php");
             }
             exit();
+            
         } else {
-            $msg = "Incorrect password!";
+            echo "<script>
+                document.addEventListener('DOMContentLoaded', function () {
+                Swal.fire({
+                    icon: 'warning',
+                    // title: 'Oops...',
+                    text: 'Incorrect password!'
+                });
+        });
+              </script>";
         }
     } else {
-        $msg = "No account found with that email.";
+        echo "<script>
+                document.addEventListener('DOMContentLoaded', function () {
+                Swal.fire({
+                    icon: 'warning',
+                    // title: 'Oops...',
+                    text: 'No account found with that email.!'
+                });
+        });
+              </script>";
     }
 }
 
@@ -48,7 +72,15 @@ if (isset($_POST["loginBTN"])) {
     <title>Login | Dream School</title>
     <link rel="stylesheet" href="../assets/css/form-styles.css">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
-
+    <!-- SweetAlert2 CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <style>
+        .swal2-popup {
+            font-size: 13px !important;
+            width: 300px !important;
+            background-color: rgba(255, 255, 255, 0.9) !important;
+        }
+    </style>
 </head>
 
 <body>
