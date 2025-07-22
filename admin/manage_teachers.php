@@ -9,6 +9,7 @@ if (!isset($_SESSION['role']) || $_SESSION['role'] != 'Admin') {
 }
 
 $msg = "";
+$name = $_SESSION['name'];
 
 // Fetch data for teachers
 $teacher_stmt = $conn->prepare("
@@ -18,7 +19,7 @@ $teacher_stmt = $conn->prepare("
 $teacher_stmt->execute();
 $teacher_result = $teacher_stmt->get_result();
 
-// Coount total teachers
+// Count total teachers
 $teacher_count_query = "SELECT COUNT(*) AS total_teachers FROM teachers";
 $teacher_count_query_result = $conn->query($teacher_count_query);
 $total_teachers = $teacher_count_query_result->fetch_assoc()['total_teachers'];
@@ -72,7 +73,6 @@ if (isset($_POST['assignBTN'])) {
             });
     });
           </script>";
-
     } else {
 
         $insert_subject_teacher = $conn->prepare("INSERT INTO class_subject_teachers (class_id, subject_id, teacher_id) 
@@ -273,15 +273,22 @@ if (isset($_POST['assignBTN'])) {
     <div class="sidebar" id="sidebar">
         <button class="toggle-btn" onclick="toggleSidebar()">☰</button>
         <div class="sidebar-content">
+            <!-- Profile Picture -->
+            <div class="profile-picture-container">
+                <img src="../uploads/profile_pictures/<?= $current_picture ?? '../uploads/profile_pictures/default.png'; ?>"
+                    alt="Profile Picture">
+                <p style="margin-top: 1px; font-weight: bold;"><?= $name; ?></p>
+            </div>
             <ul class="menu-list">
                 <li><a href="index.php"><i class="bi bi-house-door"></i><span class="menu-text">Dashboard</span></a></li>
-                <li><a href="manage_classes.php"><i class="bi bi-person"></i><span class="menu-text">Manage Classes</span></a></li>
-                <li><a href="manage_subjects.php"><i class="bi bi-gear"></i><span class="menu-text">Manage Subjects</span></a></li>
-                <li><a href="manage_teachers.php"><i class="bi bi-gear"></i><span class="menu-text">View Teachers</span></a></li>
-                <li><a href="manage_students.php"><i class="bi bi-gear"></i><span class="menu-text">View Students</span></a></li>
-                <li><a href="manage_admins.php"><i class="bi bi-gear"></i><span class="menu-text">View Admins</span></a></li>
-                <li><a href="logout.php"><i class="bi bi-box-arrow-right"></i><span class="menu-text">Logout</span></a></li>
+                <li><a href="manage_classes.php"><i class="bi bi-building"></i><span class="menu-text">Manage Classes</span></a></li>
+                <li><a href="manage_subjects.php"><i class="bi bi-journal-bookmark"></i><span class="menu-text">Manage Subjects</span></a></li>
+                <li><a href="manage_teachers.php" class="active"><i class="bi bi-person-badge"></i><span class="menu-text">View Teachers</span></a></li>
+                <li><a href="manage_students.php"><i class="bi bi-people"></i><span class="menu-text">View Students</span></a></li>
+                <li><a href="manage_admins.php"><i class="bi bi-person-gear"></i><span class="menu-text">View Admins</span></a></li>
+                <li><a href="../php/logout.php"><i class="bi bi-box-arrow-right"></i><span class="menu-text">Logout</span></a></li>
             </ul>
+
         </div>
     </div>
 
@@ -294,10 +301,23 @@ if (isset($_POST['assignBTN'])) {
                 <h2>Dream School</h2>
             </div>
             <div class="nav-links">
-                <a href="logout.php"><i class="bi bi-box-arrow-right"></i></a>
+                <a href="javascript:void(0);" id="profileDropdownBtn">
+                    <i class="bi bi-person-circle"></i>
+                </a>
+                <div id="profileDropdown" style="display:none; position:absolute; right:0; top:40px; background:#fff; border-radius:8px; box-shadow:0 2px 12px rgba(0,0,0,0.12); min-width:180px; z-index:1000; padding:16px; text-align:center;">
+                    <img src="../uploads/profile_pictures/<?= $current_picture ?? '../uploads/profile_pictures/default.png'; ?>" alt="Profile Picture" style="width:48px; height:48px; border-radius:50%; border:2px solid #3498db; margin-bottom:8px;">
+                    <div style="font-weight:bold;"><?= $name; ?></div>
+                    <hr style="margin:10px 0;">
+                    <a href="../php/change_profile_picture.php" style="display:block; color:#3498db; margin-bottom:8px; text-decoration:none; font-size:15px;">
+                        <i class="bi bi-camera"></i> Change Picture
+                    </a>
+                    <a href="view_profile.php" style="display:block; color:#3498db; text-decoration:none; font-size:15px;">
+                        <i class="bi bi-pencil-square"></i> Edit Info
+                    </a>
+                </div>
+                <a href="../php/logout.php"><i class="bi bi-box-arrow-right"></i></a>
             </div>
         </div>
-
         <!-- Main content -->
         <div class="main-content">
             <br>
@@ -320,7 +340,7 @@ if (isset($_POST['assignBTN'])) {
 
             <!-- Teachers Table -->
             <div id="teachers-table" class="table-container active">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                <div style="">
                     <!-- Add Teacher Button -->
                     <button id="openTeacherModalBtn" style="padding: 8px 5px; background-color: #3498db; color: white; border: none; border-radius: 5px; cursor: pointer;">Add Teacher</button>
 
@@ -369,9 +389,11 @@ if (isset($_POST['assignBTN'])) {
 
             </div>
 
-            <!-- Students Table -->
+            <!-- Class Subjects Teachers Table -->
             <div id="students-table" class="table-container">
                 <button id="openStudentModalBtn" style="margin-left: 5px; padding: 8px 5px; background-color: #3498db; color: white; border: none; border-radius: 5px; cursor: pointer;">Assign</button>
+                <!-- Search Bar -->
+                <input type="text" id="searchBar" placeholder="Search Teachers..." style="padding: 8px; width: 300px; border: 1px solid #ccc; border-radius: 5px;">
 
                 <table>
                     <tr>
@@ -401,11 +423,11 @@ if (isset($_POST['assignBTN'])) {
                     <?php } ?>
                 </table>
 
-                <!-- Student's Modal -->
+                <!-- Teacher's Modal -->
                 <div id="studentModal" class="modal">
                     <div class="modal-content">
                         <span id="closeStudentModalBtn" class="close">&times;</span>
-                        <h4>Add New Student</h4>
+                        <h4>Assign Teacher To Class</h4>
                         <form action="" method="POST">
                             <select name="class_id" required>
                                 <option value="">--Select Class--</option>
@@ -526,36 +548,36 @@ if (isset($_POST['assignBTN'])) {
         });
     </script>
     <script>
-    document.getElementById('subjectDropdown').addEventListener('change', function () {
-        const subjectId = this.value;
-        const teacherDropdown = document.getElementById('teacherDropdown');
+        document.getElementById('subjectDropdown').addEventListener('change', function() {
+            const subjectId = this.value;
+            const teacherDropdown = document.getElementById('teacherDropdown');
 
-        // Clear the teacher dropdown
-        teacherDropdown.innerHTML = '<option value="">--Select Teacher--</option>';
+            // Clear the teacher dropdown
+            teacherDropdown.innerHTML = '<option value="">--Select Teacher--</option>';
 
-        if (subjectId) {
-            // Make an AJAX request to fetch teachers
-            fetch('get_teachers.php', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/x-www-form-urlencoded',
-                },
-                body: `subject_id=${subjectId}`,
-            })
-                .then(response => response.json())
-                .then(data => {
-                    // Populate the teacher dropdown with the fetched data
-                    data.forEach(teacher => {
-                        const option = document.createElement('option');
-                        option.value = teacher.teacher_id;
-                        option.textContent = teacher.username;
-                        teacherDropdown.appendChild(option);
-                    });
-                })
-                .catch(error => console.error('Error fetching teachers:', error));
-        }
-    });
-</script>
+            if (subjectId) {
+                // Make an AJAX request to fetch teachers
+                fetch('get_teachers.php', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/x-www-form-urlencoded',
+                        },
+                        body: `subject_id=${subjectId}`,
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        // Populate the teacher dropdown with the fetched data
+                        data.forEach(teacher => {
+                            const option = document.createElement('option');
+                            option.value = teacher.teacher_id;
+                            option.textContent = teacher.username;
+                            teacherDropdown.appendChild(option);
+                        });
+                    })
+                    .catch(error => console.error('Error fetching teachers:', error));
+            }
+        });
+    </script>
 </body>
 
 </html>

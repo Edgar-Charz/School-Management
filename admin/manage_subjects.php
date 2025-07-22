@@ -8,6 +8,9 @@ if (!isset($_SESSION['role']) || $_SESSION['role'] != 'Admin') {
     exit();
 }
 
+// Get the admin's name from the session
+$name = $_SESSION['name'];
+
 // Handle subject submission
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $subject_name = trim($_POST['subject_name']);
@@ -168,15 +171,22 @@ $total_subjects = $subjects_count_query_result->fetch_assoc()['total_subjects'];
     <div class="sidebar" id="sidebar">
         <button class="toggle-btn" onclick="toggleSidebar()">☰</button>
         <div class="sidebar-content">
+            <!-- Profile Picture -->
+            <div class="profile-picture-container">
+                <img src="../uploads/profile_pictures/<?= $current_picture ?? '../uploads/profile_pictures/default.png'; ?>"
+                    alt="Profile Picture">
+                <p style="margin-top: 1px; font-weight: bold;"><?= $name; ?></p>
+            </div>
             <ul class="menu-list">
                 <li><a href="index.php"><i class="bi bi-house-door"></i><span class="menu-text">Dashboard</span></a></li>
-                <li><a href="manage_classes.php"><i class="bi bi-person"></i><span class="menu-text">Manage Classes</span></a></li>
-                <li><a href="manage_subjects.php"><i class="bi bi-gear"></i><span class="menu-text">Manage Subjects</span></a></li>
-                <li><a href="manage_teachers.php"><i class="bi bi-gear"></i><span class="menu-text">View Teachers</span></a></li>
-                <li><a href="manage_students.php"><i class="bi bi-gear"></i><span class="menu-text">View Students</span></a></li>
-                <li><a href="manage_admins.php"><i class="bi bi-gear"></i><span class="menu-text">View Admins</span></a></li>
-                <li><a href="logout.php"><i class="bi bi-box-arrow-right"></i><span class="menu-text">Logout</span></a></li>
+                <li><a href="manage_classes.php"><i class="bi bi-building"></i><span class="menu-text">Manage Classes</span></a></li>
+                <li><a href="manage_subjects.php" class="active"><i class="bi bi-journal-bookmark"></i><span class="menu-text">Manage Subjects</span></a></li>
+                <li><a href="manage_teachers.php"><i class="bi bi-person-badge"></i><span class="menu-text">View Teachers</span></a></li>
+                <li><a href="manage_students.php"><i class="bi bi-people"></i><span class="menu-text">View Students</span></a></li>
+                <li><a href="manage_admins.php"><i class="bi bi-person-gear"></i><span class="menu-text">View Admins</span></a></li>
+                <li><a href="../php/logout.php"><i class="bi bi-box-arrow-right"></i><span class="menu-text">Logout</span></a></li>
             </ul>
+
         </div>
     </div>
 
@@ -189,10 +199,23 @@ $total_subjects = $subjects_count_query_result->fetch_assoc()['total_subjects'];
                 <h2>Dream School</h2>
             </div>
             <div class="nav-links">
-                <a href="logout.php"><i class="bi bi-box-arrow-right"></i></a>
+                <a href="javascript:void(0);" id="profileDropdownBtn">
+                    <i class="bi bi-person-circle"></i>
+                </a>
+                <div id="profileDropdown" style="display:none; position:absolute; right:0; top:40px; background:#fff; border-radius:8px; box-shadow:0 2px 12px rgba(0,0,0,0.12); min-width:180px; z-index:1000; padding:16px; text-align:center;">
+                    <img src="../uploads/profile_pictures/<?= $current_picture ?? '../uploads/profile_pictures/default.png'; ?>" alt="Profile Picture" style="width:48px; height:48px; border-radius:50%; border:2px solid #3498db; margin-bottom:8px;">
+                    <div style="font-weight:bold;"><?= $name; ?></div>
+                    <hr style="margin:10px 0;">
+                    <a href="../php/change_profile_picture.php" style="display:block; color:#3498db; margin-bottom:8px; text-decoration:none; font-size:15px;">
+                        <i class="bi bi-camera"></i> Change Picture
+                    </a>
+                    <a href="view_profile.php" style="display:block; color:#3498db; text-decoration:none; font-size:15px;">
+                        <i class="bi bi-pencil-square"></i> Edit Info
+                    </a>
+                </div>
+                <a href="../php/logout.php"><i class="bi bi-box-arrow-right"></i></a>
             </div>
         </div>
-
         <div class="main-content">
             <br>
             <div class="card-container">

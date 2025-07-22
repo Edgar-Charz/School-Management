@@ -17,7 +17,7 @@ if (isset($_POST["registerBTN"])) {
     $role = $_POST['role'];
     $class = $_POST['class'] ?? null;
     $subject = $_POST['subject'] ?? null;
-    $default_picture = '../uploads/profile_pictures/default.png';
+    // $default_picture = '../uploads/profile_pictures/default.png';
 
     // Check if email already exists
     $check = $conn->prepare("SELECT * FROM users WHERE user_email = ?");
@@ -38,8 +38,8 @@ if (isset($_POST["registerBTN"])) {
     } else {
 
         // Insert user into the users table
-        $stmt = $conn->prepare("INSERT INTO users (first_name, middle_name, last_name, username, phone_no, user_email, user_password, hashed_password, user_role, user_profile_pic) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
-        $stmt->bind_param("ssssssssss", $firstname, $middlename,  $lastname, $username, $phone, $email, $user_password, $hashed_password, $role, $default_picture);
+        $stmt = $conn->prepare("INSERT INTO users (first_name, middle_name, last_name, username, phone_no, user_email, user_password, hashed_password, user_role) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)");
+        $stmt->bind_param("sssssssss", $firstname, $middlename,  $lastname, $username, $phone, $email, $user_password, $hashed_password, $role);
 
         if ($stmt->execute()) {
             $userId = $stmt->insert_id;
@@ -137,7 +137,7 @@ if (isset($_POST["registerBTN"])) {
             width: 48%;
             /* Adjust width to fit within the container with spacing */
             padding: 10px 20px;
-            background-color: #3498db;
+            background-color: #334f62ff;
             color: white;
             border: none;
             border-radius: 5px;
@@ -158,34 +158,35 @@ if (isset($_POST["registerBTN"])) {
         <form method="POST" action="">
             <!-- Step 1 -->
             <div class="step active" id="step-1">
-                <label>FirstName:</label>
-                <input type="text" name="first_name" required><br><br>
-                <label>MiddleName:</label>
-                <input type="text" name="middle_name" required><br><br>
-                <label>LastName:</label>
-                <input type="text" name="last_name" required><br><br>
-                <label>Gender:</label>
+                <label>First Name</label>
+                <input type="text" name="first_name" oninput="convertToUpperCase(this)" required><br><br>
+                <label>Middle Name</label>
+                <input type="text" name="middle_name" oninput="convertToUpperCase(this)" required><br><br>
+                <label>Last Name</label>
+                <input type="text" name="last_name" oninput="convertToUpperCase(this)" required><br><br>
+                <label>Gender</label>
                 <input type="radio" name="gender" value="Male" required>Male
                 <input type="radio" name="gender" value="Female" required>Female<br>
             </div>
 
             <!-- Step 2 -->
             <div class="step" id="step-2">
-                <label>Phone No:</label>
+                <label>Phone No.</label>
                 <input type="text" name="phone" pattern="[0-9] {10, 15}" required><br><br>
-                <label>Email:</label>
+                <label>Email</label>
                 <input type="email" name="email" required><br><br>
-                <label>Password:</label>
+                <label>Password</label>
                 <input type="password" name="password" required><br><br>
-                <label>Role:</label>
+                <label>Role</label>
                 <select name="role" id="role_select" required>
                     <option value="">-- Select Role --</option>
+                    <option value="admin">Admin</option>
                     <option value="teacher">Teacher</option>
                     <option value="student">Student</option>
                 </select><br><br>
 
                 <div id="class_field" style="display: none;">
-                    <label>Class:</label>
+                    <label>Class</label>
                     <select name="class">
                         <option value="">-- Select Class --</option>
                         <?php
@@ -199,7 +200,7 @@ if (isset($_POST["registerBTN"])) {
                     </select><br>
                 </div>
                 <div id="subject_field" style="display: none;">
-                    <label>Subject:</label>
+                    <label>Subject</label>
                     <select name="subject">
                         <option value="">-- Select Subject --</option>
                         <?php
@@ -261,6 +262,18 @@ if (isset($_POST["registerBTN"])) {
             subjectField.style.display = this.value === 'teacher' ? 'block' : 'none';
         });
     </script>
+    <script>
+        if (window.history.replaceState) {
+            window.history.replaceState(null, null, window.location.href);
+        }
+    </script>
+
+    <script>
+        function convertToUpperCase(input) {
+            input.value = input.value.toUpperCase();
+        }
+    </script>
+
 </body>
 
 </html>

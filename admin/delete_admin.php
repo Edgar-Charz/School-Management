@@ -12,7 +12,7 @@ $id = $_GET['id'];
 // Prevent current admin from deleting themselves
 if ($_SESSION['user_id'] != $id) {
     $conn->query("DELETE FROM users 
-                                WHERE user_id =$id 
+                                WHERE user_id = $id 
                                 AND user_role = 'Admin'");
 }
 

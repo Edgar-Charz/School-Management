@@ -1,5 +1,6 @@
 <?php
 session_start();
+include_once '../includes/session_check.php';
 include '../includes/db_connection.php';
 
 if (!isset($_SESSION['role']) || $_SESSION['role'] != 'Student') {
@@ -102,27 +103,51 @@ while ($row = $result->fetch_assoc()) {
 </head>
 
 <body>
+
+    <!-- Sidebar -->
     <div class="sidebar" id="sidebar">
         <button class="toggle-btn" onclick="toggleSidebar()">☰</button>
         <div class="sidebar-content">
-            <div class="profile-picture-container" style="text-align: center; margin-bottom: 15px;">
-                <img src="../uploads/profile_pictures/<?= htmlspecialchars($current_picture); ?>" alt="Profile Picture" style="width: 50px; height: 50px; border-radius: 50%; border: 2px solid #ccc;">
-                <p style="margin-top: 1px; font-weight: bold;"><?= htmlspecialchars($name); ?></p>
+            <!-- Profile Picture -->
+            <div class="profile-picture-container">
+                <img src="../uploads/profile_pictures/<?= $current_picture ?? '../uploads/profile_pictures/default.png'; ?>"
+                    alt="Profile Picture">
+                <p style="margin-top: 1px; font-weight: bold;"><?= $name; ?></p>
             </div>
             <ul class="menu-list">
-                <li><a href="index.php"><i class="bi bi-house-door"></i> Dashboard</a></li>
-                <li><a href="enroll_subject.php"><i class="bi bi-house-door"></i> Enrollment</a></li>
-                <li><a href="view_announcements.php"><i class="bi bi-person"></i> View Announcements</a></li>
-                <li><a href="view_profile.php"><i class="bi bi-gear"></i> View Profile</a></li>
-                <li><a href="../php/logout.php"><i class="bi bi-box-arrow-right"></i> Logout</a></li>
+                <li><a href="index.php"><i class="bi bi-house-door"></i><span class="menu-text">Dashboard</span></a></li>
+                <li><a href="enroll_subject.php" class="active"><i class="bi bi-journal-plus"></i><span class="menu-text">Enrollment</span></a></li>
+                <li><a href="view_announcements.php"><i class="bi bi-megaphone"></i><span class="menu-text">View Announcements</span></a></li>
+                <!-- <li><a href="view_profile.php"><i class="bi bi-person-circle"></i><span class="menu-text">View Profile</span></a></li> -->
+                <!-- <li><a href="../php/logout.php"><i class="bi bi-box-arrow-right"></i><span class="menu-text">Logout</span></a></li> -->
             </ul>
         </div>
     </div>
 
+    <!-- Main area (Top bar + Content) -->
     <div class="main-area" id="main-area">
+
+        <!-- Top Navbar -->
         <div class="navbar">
             <div class="navbar-left">
                 <h2>Dream School</h2>
+            </div>
+            <div class="nav-links">
+                <a href="javascript:void(0);" id="profileDropdownBtn">
+                    <i class="bi bi-person-circle"></i>
+                </a>
+                <div id="profileDropdown" style="display:none; position:absolute; right:0; top:40px; background:#fff; border-radius:8px; box-shadow:0 2px 12px rgba(0,0,0,0.12); min-width:180px; z-index:1000; padding:16px; text-align:center;">
+                    <img src="../uploads/profile_pictures/<?= $current_picture ?? '../uploads/profile_pictures/default.png'; ?>" alt="Profile Picture" style="width:48px; height:48px; border-radius:50%; border:2px solid #3498db; margin-bottom:8px;">
+                    <div style="font-weight:bold;"><?= $name; ?></div>
+                    <hr style="margin:10px 0;">
+                    <a href="../php/change_profile_picture.php" style="display:block; color:#3498db; margin-bottom:8px; text-decoration:none; font-size:15px;">
+                        <i class="bi bi-camera"></i> Change Picture
+                    </a>
+                    <a href="edit_profile.php" style="display:block; color:#3498db; text-decoration:none; font-size:15px;">
+                        <i class="bi bi-pencil-square"></i> Edit Info
+                    </a>
+                </div>
+                <a href="logout.php"><i class="bi bi-box-arrow-right"></i></a>
             </div>
         </div>
 
@@ -164,6 +189,7 @@ while ($row = $result->fetch_assoc()) {
             sidebar.classList.toggle('collapsed');
         }
     </script>
+    <script src="../assets/js/main.js"></script>
 </body>
 
 </html>
